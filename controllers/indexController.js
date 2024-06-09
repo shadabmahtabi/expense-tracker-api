@@ -2,11 +2,13 @@ import passport from "passport";
 import { catchAsynchErrors } from "../middlewares/catchAsynchErrors.js";
 import userModel from "../models/userModel.js";
 import statementModel from "../models/statement.js";
+import ErrorHandler from "../utils/ErrorHandler.js";
 
 // This is for showing homepage
 export const homepage = catchAsynchErrors(async (req, res, next) => {
   res.json({
-    message: "Secure homepage",
+    status: true,
+    response: "Secure homepage",
     user: req.user,
     // user: req.user
   });
@@ -17,19 +19,21 @@ export const userLogin = catchAsynchErrors(async (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) {
       console.error("Authentication error:", err);
-      return next(err);
+      return next(new ErrorHandler(err.message, 500));
     }
     if (!user) {
       console.log("Authentication failed:", info.message);
-      return res.status(400).json({ message: "Incorrect email or password" });
+      return res
+        .status(400)
+        .json({ status: false, response: "Incorrect email or password" });
     }
     req.logIn(user, (err) => {
       if (err) {
         console.error("Login error:", err);
-        return next(err);
+        return next(new ErrorHandler(err.message, 500));
       }
       console.log("User logged in:", user.email);
-      return res.status(200).json({ message: "LoggedIn Successfully." });
+      return res.status(200).json({ status: true, response: user });
     });
   })(req, res, next);
 });
@@ -51,13 +55,11 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
     req.body.password,
     function (err, registeredUser) {
       if (err) {
-        return res.status(500).send(err.message);
+        return res.status(500).send({ status: false, response: err.message });
       }
       // If registration is successful, authenticate the user
       passport.authenticate("local")(req, res, () => {
-        return res
-          .status(200)
-          .json({ message: "Registered Successfully!", user: registeredUser });
+        return res.status(200).json({ status: true, response: registeredUser });
       });
     }
   );
@@ -69,58 +71,124 @@ export const userLogout = catchAsynchErrors(async function (req, res, next) {
     if (err) {
       return res
         .status(500)
-        .json({ message: "Please login to access the resource." });
+        .json({
+          status: false,
+          response: "Please login to access the resource.",
+        });
     }
-    res.status(200).json({ message: "LoggedOut Successfully!" });
+    res.status(200).json({ status: true, response: "LoggedOut Successfully!" });
   });
 });
 
 // This controller is for adding statements
-export const addStatement = catchAsynchErrors(async function (req, res, next) {
-  let user = req.user;
-  let statement = new statementModel({
-    ...req.body,
+export const addStatement = catchAsynchErrors(async (req, res, next) => {
+  const user = req.user;
+  const { amount, type, ...rest } = req.body;
+  const amountNum = parseFloat(amount); // Ensure amount is treated as a number
+
+  const statement = new statementModel({
+    ...rest,
+    amount: amountNum,
+    type,
     user: user._id,
     previousAmount: user.totalIncome - user.totalExpense,
   });
 
-  if (statement.type === "income") {
-    user.totalIncome += statement.amount;
-    user.remainingAmount += statement.amount;
-  } else {
-    user.totalExpense += statement.amount;
-    user.remainingAmount -= statement.amount;
-  }
+  const isIncome = type === "income";
+  user.totalIncome += isIncome ? amountNum : 0;
+  user.totalExpense += isIncome ? 0 : amountNum;
+  user.remainingAmount += isIncome ? amountNum : -amountNum;
 
-  await statement.save(); // Ensure statement is saved to the database
+  await statement.save();
   user.statements.push(statement._id);
-  await user.save(); // Ensure user is updated with new statement
+  await user.save();
 
-  res.status(200).json({ status: true, statement });
+  res.status(200).json({ status: true, response: statement });
 });
 
 // This controller is for viewing statements
-export const viewStatements = catchAsynchErrors(async function (req, res, next) {
-  
-  let { statements } = await req.user.populate("statements")
-
-  res.status(200).json({ status: true, statements });
+export const viewStatements = catchAsynchErrors(async (req, res, next) => {
+  const { statements } = await req.user.populate("statements");
+  res.status(200).json({ status: true, response: statements });
 });
 
 // This controller is for updating statements
-export const updateStatement = catchAsynchErrors(async function (req, res, next) {
-  
-  await statementModel.findByIdAndUpdate(req.params.id, req.body);
+export const updateStatement = catchAsynchErrors(async (req, res, next) => {
+  const { id } = req.params;
+  const { amount, type, category, date, desc } = req.body;
+  const user = req.user;
 
-  let statement = await statementModel.findById(req.params.id);
+  if (!user.statements.includes(id)) {
+    return next(new ErrorHandler("Statement not found!", 404));
+  }
 
-  res.status(200).json({ status: true, statement });
+  const statement = await statementModel.findById(id);
+  if (!statement) {
+    return next(new ErrorHandler("Statement not found!", 404));
+  }
+
+  const amountNum = parseFloat(amount); // Ensure amount is treated as a number
+
+  const adjustUserAmounts = (amount, isIncome, add) => {
+    const amountValue = parseFloat(amount); // Ensure amount is treated as a number
+    if (isIncome) {
+      user.totalIncome += add ? amountValue : -amountValue;
+      user.remainingAmount += add ? amountValue : -amountValue;
+    } else {
+      user.totalExpense += add ? amountValue : -amountValue;
+      user.remainingAmount += add ? -amountValue : amountValue;
+    }
+  };
+
+  adjustUserAmounts(statement.amount, statement.type === "income", false);
+  adjustUserAmounts(amountNum, type === "income", true);
+
+  Object.assign(statement, {
+    amount: amountNum,
+    type,
+    category,
+    date,
+    desc,
+    previousAmount: user.totalIncome - user.totalExpense,
+  });
+
+  await statement.save();
+  await user.save();
+
+  res.status(200).json({ status: true, response: statement });
 });
 
 // This controller is for deleting statements
-export const deleteStatement = catchAsynchErrors(async function (req, res, next) {
-  
-  let statement = await statementModel.findByIdAndDelete(req.params.id);
+export const deleteStatement = catchAsynchErrors(async (req, res, next) => {
+  const { id } = req.params;
+  const user = req.user;
 
-  res.status(200).json({ status: true, statement });
+  if (!user.statements.includes(id)) {
+    return next(new ErrorHandler("Statement not found!", 404));
+  }
+
+  const statement = await statementModel.findByIdAndDelete(id);
+  if (!statement) {
+    return next(new ErrorHandler("Statement not found!", 404));
+  }
+
+  const adjustUserAmounts = (amount, isIncome) => {
+    if (isIncome) {
+      user.totalIncome -= amount;
+      user.remainingAmount -= amount;
+    } else {
+      user.totalExpense -= amount;
+      user.remainingAmount += amount;
+    }
+  };
+
+  adjustUserAmounts(statement.amount, statement.type === "income");
+
+  user.statements = user.statements.filter(
+    (sid) => sid.toString() !== id.toString()
+  );
+
+  await user.save();
+
+  res.status(200).json({ status: true, response: statement });
 });

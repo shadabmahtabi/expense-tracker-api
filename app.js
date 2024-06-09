@@ -7,6 +7,8 @@ import expressSession from "express-session";
 import passport from "passport";
 import userModel from "./models/userModel.js";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+
 
 // db connection
 import { connectDatabase } from "./models/database.js";
@@ -20,6 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 import logger from "morgan";
 app.use(logger("dev"));
 
+// Enabling cors policy
+app.use(cors());
 
 import connectMongoDBSession from "connect-mongodb-session";
 const MongoDBStore = connectMongoDBSession(expressSession);

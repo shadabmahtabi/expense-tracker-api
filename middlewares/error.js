@@ -10,7 +10,8 @@ export function generatedErrors(err, req, res, next) {
   }
 
   res.status(statusCode).json({
-    message: err.message,
+    status: false,
+    response: err.message,
     error: err.name,
     //   stack: err.stack
   });
