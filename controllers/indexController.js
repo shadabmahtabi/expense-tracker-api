@@ -8,8 +8,7 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 export const homepage = catchAsynchErrors(async (req, res, next) => {
   res.json({
     status: true,
-    response: "Secure homepage",
-    user: req.user,
+    response: req.user,
     // user: req.user
   });
 });

@@ -67,7 +67,7 @@ function isLoggedIn(req, res, next) {
   } else {
     return res
       .status(500)
-      .json({ message: "Please login to access the resource." });
+      .json({ status: false, response: "Please login to access the resource." });
   }
 }
 
