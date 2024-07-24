@@ -1,8 +1,9 @@
-import passport from "passport";
 import { catchAsynchErrors } from "../middlewares/catchAsynchErrors.js";
 import userModel from "../models/userModel.js";
 import statementModel from "../models/statement.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // This is for showing homepage
 export const homepage = catchAsynchErrors(async (req, res, next) => {
@@ -15,68 +16,48 @@ export const homepage = catchAsynchErrors(async (req, res, next) => {
 
 // This controller is for logging in a user
 export const userLogin = catchAsynchErrors(async (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) {
-      console.error("Authentication error:", err);
-      return next(new ErrorHandler(err.message, 500));
-    }
-    if (!user) {
-      console.log("Authentication failed:", info.message);
-      return res
-        .status(400)
-        .json({ status: false, response: "Incorrect email or password" });
-    }
-    req.logIn(user, (err) => {
-      if (err) {
-        console.error("Login error:", err);
-        return next(new ErrorHandler(err.message, 500));
-      }
-      console.log("User logged in:", user.email);
-      return res.status(200).json({ status: true, response: user });
-    });
-  })(req, res, next);
+  const { email, password } = req.body;
+  const user = await userModel.findOne({ email: email }).exec();
+  if (!user) return next(new ErrorHandler("User not found", 404));
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return next(new ErrorHandler("Password is incorrect", 404));
+  const token = jwt.sign({ iserId: user._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+  // res.cookie("jwt", token, { httpOnly: true, maxAge: 3 * 24 * 60 * 60 * 1000 });
+  res.status(200).json({
+    status: true,
+    response: token,
+  });
 });
 
 // This controller is for registering a user
 export const userRegister = catchAsynchErrors(async (req, res, next) => {
+  // User details from body
+  const { email, password, firstname, lastname } = req.body;
+
+  // hashing password
+  let salt = await bcrypt.genSalt(10);
+  let hashedPassword = bcrypt.hashSync(password, salt);
+
   // Create a new user instance
   var newUser = new userModel({
-    email: req.body.email,
+    email,
     name: {
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
+      firstname,
+      lastname,
     },
+    password: hashedPassword,
+    salt
+  });
+  await newUser.save();
+
+  // JWT
+  const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-  // Register the new user with passport-local-mongoose
-  userModel.register(
-    newUser,
-    req.body.password,
-    function (err, registeredUser) {
-      if (err) {
-        return res.status(500).send({ status: false, response: err.message });
-      }
-      // If registration is successful, authenticate the user
-      passport.authenticate("local")(req, res, () => {
-        return res.status(200).json({ status: true, response: registeredUser });
-      });
-    }
-  );
-});
-
-// This controller is for logging out a user
-export const userLogout = catchAsynchErrors(async function (req, res, next) {
-  req.logout(function (err) {
-    if (err) {
-      return res
-        .status(500)
-        .json({
-          status: false,
-          response: "Please login to access the resource.",
-        });
-    }
-    res.status(200).json({ status: true, response: "LoggedOut Successfully!" });
-  });
+  return res.json({ status: true, response: token });
 });
 
 // This controller is for adding statements

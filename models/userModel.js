@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import plm from "passport-local-mongoose";
 
 let userSchema = mongoose.Schema(
   {
@@ -13,6 +12,11 @@ let userSchema = mongoose.Schema(
     },
     password: {
       type: String,
+      required: true,
+    },
+    salt: {
+      type: String,
+      required: true,
     },
     name: {
       firstname: String,
@@ -34,9 +38,6 @@ let userSchema = mongoose.Schema(
   },
   { timestamps: true }
 );
-
-// Ensure the plugin uses the correct field for the username
-userSchema.plugin(plm, { usernameField: "email" });
 
 let userModel = mongoose.model("User", userSchema);
 

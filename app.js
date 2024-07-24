@@ -3,12 +3,7 @@ const app = express();
 import indexRouter from "./routes/indexRouter.js";
 import dotenv from "dotenv";
 dotenv.config();
-import expressSession from "express-session";
-import passport from "passport";
-import userModel from "./models/userModel.js";
-import cookieParser from "cookie-parser";
 import cors from "cors";
-
 
 // db connection
 import { connectDatabase } from "./models/database.js";
@@ -23,50 +18,16 @@ import logger from "morgan";
 app.use(logger("dev"));
 
 // Enabling cors policy
-app.use(cors());
-
-import connectMongoDBSession from "connect-mongodb-session";
-const MongoDBStore = connectMongoDBSession(expressSession);
-
-// Use MongoDBStore to create a new instance of MongoStore
-const store = new MongoDBStore({
-  uri: process.env.MONGODB_URL, // MongoDB connection URI
-  databaseName: "expenseTracker", // MongoDB database name
-  collection: "sessions", // Collection to store sessions
-});
-
-// Passport code
 app.use(
-  expressSession({
-    resave: false,
-    saveUninitialized: false,
-    secret: process.env.EXPRESS_SESSION_SECRET,
-    cookie: {
-      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
-    },
-    store: store,
+  cors({
+    // origin: 'http://localhost:5173', // Your React app's URL
+    origin: process.env.FRONTEND_URL, // Your React app's URL
+    credentials: true, // Enable credentials (cookies)
   })
 );
-app.use(passport.initialize());
-app.use(passport.session());
-passport.serializeUser(userModel.serializeUser());
-passport.deserializeUser(userModel.deserializeUser());
-
-// cookieParser
-app.use(cookieParser());
 
 // Routing
-app.use("/", indexRouter);
-
-// // Error Handling
-// app.use((err, req, res, next) => {
-//   console.error(err.message);
-//   res.status(500).json({ message: err.message });
-// });
-
-// app.use("*", (req, res, next) => {
-//   res.status(404).json({ message: "Route not found" });
-// });
+app.use("/api/", indexRouter);
 
 // Error Handling
 import ErrorHandler from "./utils/ErrorHandler.js";
