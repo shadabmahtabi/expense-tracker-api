@@ -1,4 +1,4 @@
-# Expense Tracker
+# Budget Buddy
 
 ### It tracks all your incomes and expenses.
 
