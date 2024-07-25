@@ -17,7 +17,7 @@ import verifytoken from '../middlewares/auth.js'
  * @route /
  * @desc Home Route
  */
-router.get("/", verifytoken, homepage);
+router.get("/user", verifytoken, homepage);
 
 /**
  * @method POST

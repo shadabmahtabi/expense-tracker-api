@@ -10,20 +10,20 @@ export const homepage = catchAsynchErrors(async (req, res, next) => {
   res.json({
     status: true,
     response: req.user,
-    // user: req.user
   });
 });
 
 // This controller is for logging in a user
 export const userLogin = catchAsynchErrors(async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await userModel.findOne({ email: email }).exec();
+  const user = await userModel.findOne({ email: email }).select("+password +salt").exec();
   if (!user) return next(new ErrorHandler("User not found", 404));
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return next(new ErrorHandler("Password is incorrect", 404));
-  const token = jwt.sign({ iserId: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
+  console.log("Generated Token:", token);
   // res.cookie("jwt", token, { httpOnly: true, maxAge: 3 * 24 * 60 * 60 * 1000 });
   res.status(200).json({
     status: true,
@@ -57,7 +57,7 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-  return res.json({ status: true, response: token });
+  return res.status(201).json({ status: true, response: token });
 });
 
 // This controller is for adding statements
