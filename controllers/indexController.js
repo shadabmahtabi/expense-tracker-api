@@ -56,6 +56,7 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
   const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
+  console.log("Generated Token:", token);
 
   return res.status(201).json({ status: true, response: token });
 });
