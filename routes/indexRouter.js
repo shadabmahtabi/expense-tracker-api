@@ -38,27 +38,27 @@ router.post("/user/register", userRegister);
  * @route /add/statement
  * @desc use for adding a statement
  */
-router.post("/add/statement", verifytoken, addStatement);
+router.post("/statement/add", verifytoken, addStatement);
 
 /**
  * @method GET
  * @route /view/statement
  * @desc use for adding a statement
  */
-router.get("/view/statement", verifytoken, viewStatements);
+router.get("/statement/view", verifytoken, viewStatements);
 
 /**
  * @method PUT
  * @route /update/statement/:id
  * @desc use for deleting a statement
  */
-router.put("/update/statement/:id", verifytoken, updateStatement);
+router.put("/statement/update/:id", verifytoken, updateStatement);
 
 /**
  * @method DELETE
  * @route /delete/statement/:id
  * @desc use for deleting a statement
  */
-router.delete("/delete/statement/:id", verifytoken, deleteStatement);
+router.delete("/statement/delete/:id", verifytoken, deleteStatement);
 
 export default router;

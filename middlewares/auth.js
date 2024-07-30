@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 const verifyToken = async (req, res, next) => {
   try {
     let token = req.header("Authorization")?.replace("Bearer ", "");
-    console.log(token)
+    // console.log(token)
 
     if (token.startsWith('"') && token.endsWith('"')) {
       token = token.slice(1, -1);
@@ -27,7 +27,7 @@ const verifyToken = async (req, res, next) => {
 
     // console.log({ user: user });
 
-    req.user = { ...user };
+    req.user = user;
 
     next();
   } catch (err) {

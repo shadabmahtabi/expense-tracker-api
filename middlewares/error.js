@@ -9,6 +9,8 @@ export function generatedErrors(err, req, res, next) {
     }
   }
 
+  console.log(err)
+
   res.status(statusCode).json({
     status: false,
     response: err.message,

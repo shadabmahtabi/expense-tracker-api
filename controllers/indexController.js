@@ -7,16 +7,21 @@ import jwt from "jsonwebtoken";
 
 // This is for showing homepage
 export const homepage = catchAsynchErrors(async (req, res, next) => {
+  const { name, _id, totalExpense, totalIncome, remainingAmount } = req.user;
+
   res.json({
     status: true,
-    response: req.user,
+    response: { name, _id, totalExpense, totalIncome, remainingAmount },
   });
 });
 
 // This controller is for logging in a user
 export const userLogin = catchAsynchErrors(async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await userModel.findOne({ email: email }).select("+password +salt").exec();
+  const user = await userModel
+    .findOne({ email: email })
+    .select("+password +salt")
+    .exec();
   if (!user) return next(new ErrorHandler("User not found", 404));
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return next(new ErrorHandler("Password is incorrect", 404));
@@ -48,7 +53,7 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
       lastname,
     },
     password: hashedPassword,
-    salt
+    salt,
   });
   await newUser.save();
 
@@ -63,33 +68,55 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
 
 // This controller is for adding statements
 export const addStatement = catchAsynchErrors(async (req, res, next) => {
-  const user = req.user;
+  const user = await userModel.findById(req.userId).exec();
   const { amount, type, ...rest } = req.body;
-  const amountNum = parseFloat(amount); // Ensure amount is treated as a number
+  const amountNum = parseFloat(amount);
+
+  // Validate amount
+  if (isNaN(amountNum)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid amount value." });
+  }
+
+  // console.log(user);
+  // Validate totalIncome and totalExpense
+  const totalIncome = user.totalIncome || 0;
+  const totalExpense = user.totalExpense || 0;
+
+  const previousAmount = totalIncome - totalExpense;
+
+  if (isNaN(previousAmount)) {
+    return res
+      .status(500)
+      .json({ status: false, message: "Invalid previous amount calculation." });
+  }
 
   const statement = new statementModel({
     ...rest,
     amount: amountNum,
     type,
     user: user._id,
-    previousAmount: user.totalIncome - user.totalExpense,
+    previousAmount: previousAmount,
   });
 
-  const isIncome = type === "income";
-  user.totalIncome += isIncome ? amountNum : 0;
-  user.totalExpense += isIncome ? 0 : amountNum;
+  const isIncome = type === "Income";
+  user.totalIncome = totalIncome + (isIncome ? amountNum : 0);
+  user.totalExpense = totalExpense + (isIncome ? 0 : amountNum);
   user.remainingAmount += isIncome ? amountNum : -amountNum;
 
   await statement.save();
   user.statements.push(statement._id);
   await user.save();
 
-  res.status(200).json({ status: true, response: statement });
+  res.status(200).json({ status: true, response: "Statement added." });
 });
 
 // This controller is for viewing statements
 export const viewStatements = catchAsynchErrors(async (req, res, next) => {
-  const { statements } = await req.user.populate("statements");
+  // const { statements } = await req.user.populate("statements");
+  const statements = await statementModel.find({ _id: req.userId }).exec();
+  console.log(statements);
   res.status(200).json({ status: true, response: statements });
 });
 
