@@ -69,7 +69,8 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
 // This controller is for adding statements
 export const addStatement = catchAsynchErrors(async (req, res, next) => {
   const user = await userModel.findById(req.userId).exec();
-  const { amount, type, ...rest } = req.body;
+  const { amount, type, description, ...rest } = req.body;
+  console.log(req.body)
   const amountNum = parseFloat(amount);
 
   // Validate amount
@@ -96,6 +97,7 @@ export const addStatement = catchAsynchErrors(async (req, res, next) => {
     ...rest,
     amount: amountNum,
     type,
+    desc: description,
     user: user._id,
     previousAmount: previousAmount,
   });
@@ -115,8 +117,8 @@ export const addStatement = catchAsynchErrors(async (req, res, next) => {
 // This controller is for viewing statements
 export const viewStatements = catchAsynchErrors(async (req, res, next) => {
   // const { statements } = await req.user.populate("statements");
-  const statements = await statementModel.find({ _id: req.userId }).exec();
-  console.log(statements);
+  const statements = await statementModel.find({ user: req.userId }).exec();
+  // console.log(statements);
   res.status(200).json({ status: true, response: statements });
 });
 
