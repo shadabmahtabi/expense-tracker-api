@@ -26,7 +26,7 @@ export const userLogin = catchAsynchErrors(async (req, res, next) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return next(new ErrorHandler("Password is incorrect", 404));
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
   });
   console.log("Generated Token:", token);
   // res.cookie("jwt", token, { httpOnly: true, maxAge: 3 * 24 * 60 * 60 * 1000 });
@@ -70,7 +70,6 @@ export const userRegister = catchAsynchErrors(async (req, res, next) => {
 export const addStatement = catchAsynchErrors(async (req, res, next) => {
   const user = await userModel.findById(req.userId).exec();
   const { amount, type, description, ...rest } = req.body;
-  console.log(req.body)
   const amountNum = parseFloat(amount);
 
   // Validate amount
@@ -116,9 +115,7 @@ export const addStatement = catchAsynchErrors(async (req, res, next) => {
 
 // This controller is for viewing statements
 export const viewStatements = catchAsynchErrors(async (req, res, next) => {
-  // const { statements } = await req.user.populate("statements");
   const statements = await statementModel.find({ user: req.userId }).exec();
-  // console.log(statements);
   res.status(200).json({ status: true, response: statements });
 });
 
@@ -171,7 +168,7 @@ export const updateStatement = catchAsynchErrors(async (req, res, next) => {
 // This controller is for deleting statements
 export const deleteStatement = catchAsynchErrors(async (req, res, next) => {
   const { id } = req.params;
-  const user = req.user;
+  const user = await userModel.findOne({ _id: req.userId }).exec();
 
   if (!user.statements.includes(id)) {
     return next(new ErrorHandler("Statement not found!", 404));
@@ -192,7 +189,7 @@ export const deleteStatement = catchAsynchErrors(async (req, res, next) => {
     }
   };
 
-  adjustUserAmounts(statement.amount, statement.type === "income");
+  adjustUserAmounts(statement.amount, statement.type === "Income");
 
   user.statements = user.statements.filter(
     (sid) => sid.toString() !== id.toString()
