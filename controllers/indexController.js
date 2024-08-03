@@ -26,9 +26,9 @@ export const userLogin = catchAsynchErrors(async (req, res, next) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return next(new ErrorHandler("Password is incorrect", 404));
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+    expiresIn: process.env.JWT_EXPIRES_IN,
   });
-  console.log("Generated Token:", token);
+  // console.log("Generated Token:", token);
   // res.cookie("jwt", token, { httpOnly: true, maxAge: 3 * 24 * 60 * 60 * 1000 });
   res.status(200).json({
     status: true,
@@ -122,8 +122,8 @@ export const viewStatements = catchAsynchErrors(async (req, res, next) => {
 // This controller is for updating statements
 export const updateStatement = catchAsynchErrors(async (req, res, next) => {
   const { id } = req.params;
-  const { amount, type, category, date, desc } = req.body;
-  const user = req.user;
+  const { amount, type, category, date, description } = req.body;
+  const user = await userModel.findOne({ _id: req.userId }).exec();
 
   if (!user.statements.includes(id)) {
     return next(new ErrorHandler("Statement not found!", 404));
@@ -147,15 +147,15 @@ export const updateStatement = catchAsynchErrors(async (req, res, next) => {
     }
   };
 
-  adjustUserAmounts(statement.amount, statement.type === "income", false);
-  adjustUserAmounts(amountNum, type === "income", true);
+  adjustUserAmounts(statement.amount, statement.type === "Income", false);
+  adjustUserAmounts(amountNum, type === "Income", true);
 
   Object.assign(statement, {
     amount: amountNum,
     type,
     category,
     date,
-    desc,
+    desc: description,
     previousAmount: user.totalIncome - user.totalExpense,
   });
 
