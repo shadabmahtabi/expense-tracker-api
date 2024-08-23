@@ -1,12 +1,12 @@
 import express from "express";
 const app = express();
-import indexRouter from "./routes/indexRouter.js";
+import indexRouter from "./routes/indexRouter.mjs";
 import dotenv from "dotenv";
 dotenv.config();
 import cors from "cors";
 
 // db connection
-import { connectDatabase } from "./models/database.js";
+import { connectDatabase } from "./models/database.mjs";
 connectDatabase();
 
 // Body Parser
@@ -30,8 +30,8 @@ app.use(
 app.use("/api/", indexRouter);
 
 // Error Handling
-import ErrorHandler from "./utils/ErrorHandler.js";
-import { generatedErrors } from "./middlewares/error.js";
+import ErrorHandler from "./utils/ErrorHandler.mjs";
+import { generatedErrors } from "./middlewares/error.mjs";
 /*
 404 - Page not found error
 The server could not find the requested resource. 

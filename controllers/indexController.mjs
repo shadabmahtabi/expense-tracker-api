@@ -1,7 +1,7 @@
-import { catchAsynchErrors } from "../middlewares/catchAsynchErrors.js";
-import userModel from "../models/userModel.js";
-import statementModel from "../models/statement.js";
-import ErrorHandler from "../utils/ErrorHandler.js";
+import { catchAsynchErrors } from "../middlewares/catchAsynchErrors.mjs";
+import userModel from "../models/userModel.mjs";
+import statementModel from "../models/statement.mjs";
+import ErrorHandler from "../utils/ErrorHandler.mjs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -14,6 +14,14 @@ export const homepage = catchAsynchErrors(async (req, res, next) => {
     response: { name, _id, totalExpense, totalIncome, remainingAmount },
   });
 });
+
+// This is for showing homepage
+export const findUserById = async (req, res, next) => {
+  const { id } = req.params;
+  const findUser = users[id];
+  if (!findUser) return res.sendStatus(404);
+  return res.json(findUser);
+};
 
 // This controller is for logging in a user
 export const userLogin = catchAsynchErrors(async (req, res, next) => {
@@ -199,3 +207,121 @@ export const deleteStatement = catchAsynchErrors(async (req, res, next) => {
 
   res.status(200).json({ status: true, response: statement });
 });
+
+const users = [
+  { id: 1, username: "user1", name: "John Doe", email: "johndoe1@example.com" },
+  {
+    id: 2,
+    username: "user2",
+    name: "Jane Smith",
+    email: "janesmith2@example.com",
+  },
+  {
+    id: 3,
+    username: "user3",
+    name: "Jim Brown",
+    email: "jimbrown3@example.com",
+  },
+  {
+    id: 4,
+    username: "user4",
+    name: "Lisa White",
+    email: "lisawhite4@example.com",
+  },
+  {
+    id: 5,
+    username: "user5",
+    name: "Tom Green",
+    email: "tomgreen5@example.com",
+  },
+  {
+    id: 6,
+    username: "user6",
+    name: "Susan Blue",
+    email: "susanblue6@example.com",
+  },
+  {
+    id: 7,
+    username: "user7",
+    name: "Kevin Black",
+    email: "kevinblack7@example.com",
+  },
+  {
+    id: 8,
+    username: "user8",
+    name: "Nancy Silver",
+    email: "nancysilver8@example.com",
+  },
+  {
+    id: 9,
+    username: "user9",
+    name: "Robert Gold",
+    email: "robertgold9@example.com",
+  },
+  {
+    id: 10,
+    username: "user10",
+    name: "Maria Pink",
+    email: "mariapink10@example.com",
+  },
+  {
+    id: 11,
+    username: "user11",
+    name: "Steve Brown",
+    email: "stevebrown11@example.com",
+  },
+  {
+    id: 12,
+    username: "user12",
+    name: "Rachel White",
+    email: "rachelwhite12@example.com",
+  },
+  {
+    id: 13,
+    username: "user13",
+    name: "Paul Green",
+    email: "paulgreen13@example.com",
+  },
+  {
+    id: 14,
+    username: "user14",
+    name: "Laura Blue",
+    email: "laurablue14@example.com",
+  },
+  {
+    id: 15,
+    username: "user15",
+    name: "David Black",
+    email: "davidblack15@example.com",
+  },
+  {
+    id: 16,
+    username: "user16",
+    name: "Amy Silver",
+    email: "amysilver16@example.com",
+  },
+  {
+    id: 17,
+    username: "user17",
+    name: "George Gold",
+    email: "georgegold17@example.com",
+  },
+  {
+    id: 18,
+    username: "user18",
+    name: "Sara Pink",
+    email: "sarapink18@example.com",
+  },
+  {
+    id: 19,
+    username: "user19",
+    name: "Brian Brown",
+    email: "brianbrown19@example.com",
+  },
+  {
+    id: 20,
+    username: "user20",
+    name: "Diana White",
+    email: "dianawhite20@example.com",
+  },
+];

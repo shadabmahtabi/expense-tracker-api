@@ -2,15 +2,16 @@ import express from "express";
 import {
   addStatement,
   deleteStatement,
+  findUserById,
   homepage,
   updateStatement,
   userLogin,
   userRegister,
   viewStatements,
-} from "../controllers/indexController.js";
+} from "../controllers/indexController.mjs";
 const router = express.Router();
-import userModel from "../models/userModel.js";
-import verifytoken from '../middlewares/auth.js'
+import userModel from "../models/userModel.mjs";
+import verifytoken from '../middlewares/auth.mjs'
 
 /**
  * @method GET
@@ -18,6 +19,13 @@ import verifytoken from '../middlewares/auth.js'
  * @desc Home Route
  */
 router.get("/user", verifytoken, homepage);
+
+/**
+ * @method GET
+ * @route /
+ * @desc Finding user by id
+ */
+router.get("/user/:id", findUserById);
 
 /**
  * @method POST
