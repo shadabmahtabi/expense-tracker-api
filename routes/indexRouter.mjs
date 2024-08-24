@@ -2,6 +2,7 @@ import express from "express";
 import {
   addStatement,
   deleteStatement,
+  filterStatements,
   findUserById,
   homepage,
   updateStatement,
@@ -43,30 +44,37 @@ router.post("/user/register", userRegister);
 
 /**
  * @method POST
- * @route /add/statement
+ * @route /statement/add
  * @desc use for adding a statement
  */
 router.post("/statement/add", verifytoken, addStatement);
 
 /**
  * @method GET
- * @route /view/statement
+ * @route /statement/view
  * @desc use for adding a statement
  */
 router.get("/statement/view", verifytoken, viewStatements);
 
 /**
  * @method PUT
- * @route /update/statement/:id
+ * @route /statement/update/:id
  * @desc use for deleting a statement
  */
 router.put("/statement/update/:id", verifytoken, updateStatement);
 
 /**
  * @method DELETE
- * @route /delete/statement/:id
+ * @route /statement/delete/:id
  * @desc use for deleting a statement
  */
 router.delete("/statement/delete/:id", verifytoken, deleteStatement);
+
+/**
+ * @method POST
+ * @route /statements/filter
+ * @desc use for deleting a statement
+ */
+router.post("/statements/filter", verifytoken, filterStatements);
 
 export default router;

@@ -124,7 +124,10 @@ export const addStatement = catchAsynchErrors(async (req, res, next) => {
 // This controller is for viewing statements
 export const viewStatements = catchAsynchErrors(async (req, res, next) => {
   const statements = await statementModel.find({ user: req.userId }).exec();
-  res.status(200).json({ status: true, response: statements });
+  let sortedStatements = statements.sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+  res.status(200).json({ status: true, response: sortedStatements });
 });
 
 // This controller is for updating statements
@@ -206,6 +209,54 @@ export const deleteStatement = catchAsynchErrors(async (req, res, next) => {
   await user.save();
 
   res.status(200).json({ status: true, response: statement });
+});
+
+export const filterStatements = catchAsynchErrors(async (req, res, next) => {
+  const {
+    type,
+    category,
+    desc,
+    startDate,
+    endDate,
+    minAmount,
+    maxAmount,
+    orderType,
+  } = req.body;
+
+  const query = {
+    user: req.userId,
+  };
+  if (type) {
+    query.type = type;
+  }
+  if (category) {
+    query.category = category;
+  }
+  if (desc) {
+    console.log(desc)
+    query.desc = new RegExp(desc, 'i');
+  }
+  if (startDate && endDate) {
+    query.date = { $gte: startDate, $lte: endDate };
+  }
+  if (minAmount && maxAmount) {
+    query.amount = {
+      $gte: parseFloat(minAmount),
+      $lte: parseFloat(maxAmount),
+    };
+  }
+
+  const filteredStatements = await statementModel.find(query).exec();
+
+  if (orderType === "asc") {
+    filteredStatements.sort((a, b) => a.amount - b.amount);
+    return res.status(200).json({ status: true, response: filteredStatements });
+  } else if (orderType === "dsc") {
+    filteredStatements.sort((a, b) => b.amount - a.amount);
+    return res.status(200).json({ status: true, response: filteredStatements });
+  } else {
+    return res.status(200).json({ status: true, response: filteredStatements });
+  }
 });
 
 const users = [
